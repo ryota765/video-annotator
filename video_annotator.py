@@ -1,12 +1,16 @@
 import os
 import json
+
 import tkinter
+import cv2
+from PIL import Image, ImageTk
 
 # Hyper parameters -------------------------------
 source_dir = 'video'
 output_dir = 'output'
 class_list = ['feed', 'no_feed', 'unknown']
 display_num = 1 # 4
+video_path = 'video/test1.mp4'
 # ------------------------------------------------
 
 # def generate_tk(title="Video Annotator",geometry_str="400x300"):
@@ -30,6 +34,8 @@ class MainWindow():
         self.source_list = os.listdir(self.source_dir)
         self.source_num = len(self.source_list)
         # self.img = []
+        self.interval = 10 # ms
+        self.cap = args["cap"]
         self.init_window()
         # self.init_shortcuts()
 
@@ -38,6 +44,12 @@ class MainWindow():
         # font_label_index = font.Font(size=15)
 
         self.root.title(u"Video Annotator")
+
+        # display video
+        self.canvas = tkinter.Canvas(self.root,width=1000,height=1000)
+        self.canvas.grid(row=0, column=0)
+        self.update_image()
+
         # 画像を表示するキャンバスを作る
         # self.canvas = tkinter.Canvas(self.root,width=100,height=100)
         # self.canvas.grid(row=0, column=0, columnspan=7, rowspan=1)
@@ -67,6 +79,15 @@ class MainWindow():
         # self.image_on_canvas = self.canvas.create_image(0, 0, anchor=NW, image=self.img)
         # self.set_image()
 
+    def update_image(self):
+        self.image = cv2.cvtColor(self.cap.read()[1], cv2.COLOR_BGR2RGB) # to RGB
+        self.image = Image.fromarray(self.image) # to PIL format
+        self.image = ImageTk.PhotoImage(self.image) # to ImageTk format
+        # Update image
+        self.canvas.create_image(0, 0, anchor=tkinter.NW, image=self.image)
+        # Repeat every 'interval' ms
+        self.root.after(self.interval, self.update_image)
+
     # def init_shortcuts(self):
     #     self.main.focus_set()
     #     self.main.bind('<Key-Right>', self.onNextButton)
@@ -84,8 +105,6 @@ class MainWindow():
     #     img = img.resize((self.image_width,self.image_height), Image.LANCZOS)
     #     self.img = ImageTk.PhotoImage(img)
     #     self.canvas.itemconfig(self.image_on_canvas, image=self.img)
-
-    # def set_video(self):
 
 
     # def get_class_name(self, img_path):
@@ -139,6 +158,7 @@ class MainWindow():
     #     json.dump(data, open(self.json_path,'w'),indent=4)
 
 root = tkinter.Tk()
-args = {"source_dir":source_dir, "output_dir":output_dir, "class_list":class_list}
+cap = cv2.VideoCapture(video_path)
+args = {"source_dir":source_dir, "output_dir":output_dir, "class_list":class_list, "cap":cap}
 MainWindow(root,args)
 root.mainloop()
