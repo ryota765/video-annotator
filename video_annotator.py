@@ -25,12 +25,12 @@ video_display_height = 500
 
 class MainWindow():
 
-    def __init__(self, root, args):
+    def __init__(self, root):
         self.current_video_num = 0
         self.root = root
-        self.source_dir = args["source_dir"]
-        self.output_dir = args["output_dir"]
-        self.class_list = args["class_list"]
+        self.source_dir = source_dir
+        self.output_dir = output_dir
+        self.class_list = class_list
         self.class_num = len(class_list)
         self.video_width = video_display_width
         self.video_height = video_display_height
@@ -43,6 +43,7 @@ class MainWindow():
         self.init_window()
         self.set_video()
 
+    # Set components without video
     def init_window(self):
         # font_label_class = font.Font(size=20, weight='bold')
         # font_label_index = font.Font(size=15)
@@ -53,11 +54,7 @@ class MainWindow():
         self.canvas = tkinter.Canvas(self.root,width=self.video_width,height=self.video_height)
         self.canvas.grid(row=0, column=0,columnspan=6, rowspan=1)
 
-        # 画像を表示するキャンバスを作る
-        # self.canvas = tkinter.Canvas(self.root,width=100,height=100)
-        # self.canvas.grid(row=0, column=0, columnspan=7, rowspan=1)
-
-        # 次の動画を表示するボタン
+        # Buttons to change video
         self.button_next = tkinter.Button(
             self.root, text="Next (→)", command=self.on_next_button, height=3)
         self.button_next.grid(row=1, column=5, pady=10, sticky='nsew')
@@ -134,7 +131,6 @@ class MainWindow():
         # self.set_message()
 
     def on_back_button(self,e=None):
-        # 一つ戻る
         self.current_video_num -= 1
         # If first video, return last video
         if self.current_video_num == -1:
@@ -166,6 +162,5 @@ class MainWindow():
     #     json.dump(data, open(self.json_path,'w'),indent=4)
 
 root = tkinter.Tk()
-args = {"source_dir":source_dir, "output_dir":output_dir, "class_list":class_list}
-MainWindow(root,args)
+MainWindow(root)
 root.mainloop()
