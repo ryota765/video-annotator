@@ -1,4 +1,5 @@
 import os
+import glob
 import json
 
 import tkinter
@@ -10,7 +11,9 @@ source_dir = 'video'
 output_dir = 'output'
 class_list = ['feed', 'no_feed', 'unknown']
 display_num = 1 # 4
-video_path = 'video/test1.mp4'
+frame_display_interval = 10 # ms
+video_display_width = 700
+video_display_height = 500
 # ------------------------------------------------
 
 # def generate_tk(title="Video Annotator",geometry_str="400x300"):
@@ -24,20 +27,21 @@ class MainWindow():
 
     def __init__(self, root, args):
         self.current_video_num = 0
-        self.root= root
+        self.root = root
         self.source_dir = args["source_dir"]
         self.output_dir = args["output_dir"]
         self.class_list = args["class_list"]
         self.class_num = len(class_list)
-        # self.image_width = args["width"]
-        # self.image_height = args["height"]
-        self.source_list = os.listdir(self.source_dir)
+        self.video_width = video_display_width
+        self.video_height = video_display_height
+        self.source_list = glob.glob(os.path.join(self.source_dir, '*'))
         self.source_num = len(self.source_list)
         # self.img = []
-        self.interval = 10 # ms
-        self.cap = args["cap"]
-        self.init_window()
+        self.interval = frame_display_interval # ms
+        self.loop_job_id = None
         # self.init_shortcuts()
+        self.init_window()
+        self.set_video()
 
     def init_window(self):
         # font_label_class = font.Font(size=20, weight='bold')
@@ -46,20 +50,21 @@ class MainWindow():
         self.root.title(u"Video Annotator")
 
         # display video
-        self.canvas = tkinter.Canvas(self.root,width=1000,height=1000)
-        self.canvas.grid(row=0, column=0)
-        self.update_image()
+        self.canvas = tkinter.Canvas(self.root,width=self.video_width,height=self.video_height)
+        self.canvas.grid(row=0, column=0,columnspan=6, rowspan=1)
 
         # 画像を表示するキャンバスを作る
         # self.canvas = tkinter.Canvas(self.root,width=100,height=100)
         # self.canvas.grid(row=0, column=0, columnspan=7, rowspan=1)
-        # 次の画像を表示するボタン
-        # self.button_next = tkinter.Button(
-        #     self.root, text="Next (→)", command=self.onNextButton, height=3)
-        # self.button_next.grid(row=2, column=5, pady=10, sticky='nsew')
-        # self.button_back = tkinter.Button(
-        #     self.root, text="Back (←)", command=self.onBackButton, height=3)
-        # self.button_back.grid(row=2, column=1, pady=10, sticky='nsew')
+
+        # 次の動画を表示するボタン
+        self.button_next = tkinter.Button(
+            self.root, text="Next (→)", command=self.on_next_button, height=3)
+        self.button_next.grid(row=1, column=5, pady=10, sticky='nsew')
+        self.button_back = tkinter.Button(
+            self.root, text="Back (←)", command=self.on_back_button, height=3)
+        self.button_back.grid(row=1, column=0, pady=10, sticky='nsew')
+
         # クラスを決定するボタン
         # self.button_class = []
         # for i, c in enumerate(self.class_list):
@@ -79,14 +84,20 @@ class MainWindow():
         # self.image_on_canvas = self.canvas.create_image(0, 0, anchor=NW, image=self.img)
         # self.set_image()
 
+    def set_video(self):
+        if self.loop_job_id:
+            self.root.after_cancel(self.loop_job_id)
+        self.cap = cv2.VideoCapture(self.source_list[self.current_video_num])
+        self.update_image()
+
     def update_image(self):
         self.image = cv2.cvtColor(self.cap.read()[1], cv2.COLOR_BGR2RGB) # to RGB
-        self.image = Image.fromarray(self.image) # to PIL format
+        self.image = Image.fromarray(self.image).resize((self.video_width, self.video_height)) # to PIL format
         self.image = ImageTk.PhotoImage(self.image) # to ImageTk format
         # Update image
         self.canvas.create_image(0, 0, anchor=tkinter.NW, image=self.image)
         # Repeat every 'interval' ms
-        self.root.after(self.interval, self.update_image)
+        self.loop_job_id = self.root.after(self.interval, self.update_image)
 
     # def init_shortcuts(self):
     #     self.main.focus_set()
@@ -114,25 +125,22 @@ class MainWindow():
     #     else:
     #         return "No Label"
 
-    # def onNextButton(self,e=None):
-    #     # 一つ進む
-    #     self.current_image_num += 1
-    #     # 最初の画像に戻る
-    #     if self.current_image_num == self.images_num:
-    #         self.current_image_num = 0
-    #     # 表示画像を更新
-    #     self.set_image()
-    #     self.set_message()
+    def on_next_button(self,e=None):
+        self.current_video_num += 1
+        # If last video, return to first video
+        if self.current_video_num == self.source_num:
+            self.current_video_num = 0
+        self.set_video()
+        # self.set_message()
 
-    # def onBackButton(self,e=None):
-    #     # 一つ戻る
-    #     self.current_image_num -= 1
-    #     # 最後の画像へ
-    #     if self.current_image_num == -1:
-    #         self.current_image_num = self.images_num - 1
-    #     # 表示画像を更新
-    #     self.set_image()
-    #     self.set_message()
+    def on_back_button(self,e=None):
+        # 一つ戻る
+        self.current_video_num -= 1
+        # If first video, return last video
+        if self.current_video_num == -1:
+            self.current_video_num = self.source_num - 1
+        self.set_video()
+        # self.set_message()
 
     # def labeling(self, class_num):
     #     def x(e=None):
@@ -158,7 +166,6 @@ class MainWindow():
     #     json.dump(data, open(self.json_path,'w'),indent=4)
 
 root = tkinter.Tk()
-cap = cv2.VideoCapture(video_path)
-args = {"source_dir":source_dir, "output_dir":output_dir, "class_list":class_list, "cap":cap}
+args = {"source_dir":source_dir, "output_dir":output_dir, "class_list":class_list}
 MainWindow(root,args)
 root.mainloop()
