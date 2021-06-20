@@ -19,13 +19,6 @@ video_display_height = 500
 json_path = 'output/output.json'
 # ------------------------------------------------
 
-# def generate_tk(title="Video Annotator",geometry_str="400x300"):
-#     root = tkinter.Tk()
-#     root.title(title)
-#     root.geometry(geometry_str)
-#     return root
-
-
 class MainWindow():
 
     def __init__(self, root):
@@ -41,7 +34,6 @@ class MainWindow():
         self.source_list = glob.glob(os.path.join(self.source_dir, '*'))
         self.source_num = len(self.source_list)
         self.json_path = json_path
-        # self.img = []
         self.interval = frame_display_interval # ms
         self.loop_job_id = None
         # self.init_shortcuts()
@@ -62,23 +54,20 @@ class MainWindow():
         # Buttons to change video
         self.button_next = tkinter.Button(
             self.root, text="Next (→)", command=self.on_next_button, height=3)
-        self.button_next.grid(row=1, column=self.class_num+1, pady=10, sticky='nsew')
+        self.button_next.grid(row=2, column=self.class_num+1, pady=10, sticky='nsew')
         self.button_back = tkinter.Button(
             self.root, text="Back (←)", command=self.on_back_button, height=3)
-        self.button_back.grid(row=1, column=0, pady=10, sticky='nsew')
+        self.button_back.grid(row=2, column=0, pady=10, sticky='nsew')
 
-        # クラスを決定するボタン
+        # Buttons for class labeling
         self.button_class = []
         for i, c in enumerate(self.class_list):
             self.button_class.append(tkinter.Button(self.root, text="{}".format(c), command=lambda:[self.labeling(class_num=i), self.on_next_button()], width=10, height=3))
-            self.button_class[i].grid(row=2, column=i%self.class_num+1, padx=5, pady=10, sticky='nsew')
+            self.button_class[i].grid(row=3, column=i%self.class_num+1, padx=5, pady=10, sticky='nsew')
+
         # ラベルの内容の初期化
         # self.message_image_index = tkinter.StringVar()
-        # self.message_image_class = tkinter.StringVar()
         # self.set_message()
-        # クラスを表示するラベル
-        # self.label_image_class = tkinter.Label(self.root, textvariable=self.message_image_class, width=50, font=font_label_class, background='#CCDDDD')
-        # self.label_image_class.grid(row=1, columnspan=7)
         # 現在の画像番号を表示するラベル
         # self.label_image_index = tkinter.Label(self.root, textvariable=self.message_image_index, font=font_label_index)
         # self.label_image_index.grid(row=2, column=3, pady=10, sticky='nsew')
@@ -91,6 +80,12 @@ class MainWindow():
             self.root.after_cancel(self.loop_job_id)
         self.cap = cv2.VideoCapture(self.source_list[self.current_video_num])
         self.update_image()
+
+        # Set label
+        self.selected_video_class = tkinter.StringVar()
+        self.set_label()
+        self.label_image_class = tkinter.Label(self.root, textvariable=self.selected_video_class, width=50, background='#CCDDDD')
+        self.label_image_class.grid(row=1, columnspan=7)
 
     def update_image(self):
         self.image = cv2.cvtColor(self.cap.read()[1], cv2.COLOR_BGR2RGB) # to RGB
@@ -113,6 +108,9 @@ class MainWindow():
     #     self.message_image_index.set("{}/{}".format(str(self.current_video_num+1),str(self.source_num)))
     #     self.message_image_class.set("{}".format(self.get_class_name(self.source_list[self.current_video_num])))
 
+    def set_label(self):
+        self.selected_video_class.set("{}".format(self.get_class_name(self.source_list[self.current_video_num])))
+
     # def set_image(self,e=None):
     #     img = Image.open(os.path.join(self.images_dir,self.images_list[self.current_image_num]))
     #     img = img.resize((self.image_width,self.image_height), Image.LANCZOS)
@@ -120,10 +118,11 @@ class MainWindow():
     #     self.canvas.itemconfig(self.image_on_canvas, image=self.img)
 
 
-    def get_class_name(self, img_path):
+    def get_class_name(self, video_path):
         data = self.load_json()
-        if img_path in data:
-            return self.classes[data[img_path]]
+        # print(data, video_path)
+        if video_path in data:
+            return self.class_list[data[video_path]]
         else:
             return "No Label"
 
@@ -147,7 +146,7 @@ class MainWindow():
         def x(e=None):
             video_path =self.source_list[self.current_video_num]
             self.update_json(video_path, class_num)
-            self.set_message()
+            # self.set_message()
         return x
 
     def load_json(self):
