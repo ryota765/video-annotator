@@ -3,6 +3,8 @@ import glob
 import json
 
 import tkinter
+# from tkinter import font
+
 import cv2
 from PIL import Image, ImageTk
 
@@ -14,6 +16,7 @@ display_num = 1 # 4
 frame_display_interval = 10 # ms
 video_display_width = 700
 video_display_height = 500
+json_path = 'output/output.json'
 # ------------------------------------------------
 
 # def generate_tk(title="Video Annotator",geometry_str="400x300"):
@@ -32,10 +35,12 @@ class MainWindow():
         self.output_dir = output_dir
         self.class_list = class_list
         self.class_num = len(class_list)
+        self.button_class = []
         self.video_width = video_display_width
         self.video_height = video_display_height
         self.source_list = glob.glob(os.path.join(self.source_dir, '*'))
         self.source_num = len(self.source_list)
+        self.json_path = json_path
         # self.img = []
         self.interval = frame_display_interval # ms
         self.loop_job_id = None
@@ -57,16 +62,16 @@ class MainWindow():
         # Buttons to change video
         self.button_next = tkinter.Button(
             self.root, text="Next (→)", command=self.on_next_button, height=3)
-        self.button_next.grid(row=1, column=5, pady=10, sticky='nsew')
+        self.button_next.grid(row=1, column=self.class_num+1, pady=10, sticky='nsew')
         self.button_back = tkinter.Button(
             self.root, text="Back (←)", command=self.on_back_button, height=3)
         self.button_back.grid(row=1, column=0, pady=10, sticky='nsew')
 
         # クラスを決定するボタン
-        # self.button_class = []
-        # for i, c in enumerate(self.class_list):
-        #     self.button_class.append(tkinter.Button(self.root, text="{}".format(c), command=self.labeling(class_num=i), width=10))
-        #     self.button_class[i].grid(row=(i//self.class_num)+self.class_num//2, column=i%self.class_num, padx=5, pady=10, sticky='nsew')
+        self.button_class = []
+        for i, c in enumerate(self.class_list):
+            self.button_class.append(tkinter.Button(self.root, text="{}".format(c), command=lambda:[self.labeling(class_num=i), self.on_next_button()], width=10, height=3))
+            self.button_class[i].grid(row=2, column=i%self.class_num+1, padx=5, pady=10, sticky='nsew')
         # ラベルの内容の初期化
         # self.message_image_index = tkinter.StringVar()
         # self.message_image_class = tkinter.StringVar()
@@ -115,12 +120,12 @@ class MainWindow():
     #     self.canvas.itemconfig(self.image_on_canvas, image=self.img)
 
 
-    # def get_class_name(self, img_path):
-    #     data = self.load_json()
-    #     if img_path in data:
-    #         return self.classes[data[img_path]]
-    #     else:
-    #         return "No Label"
+    def get_class_name(self, img_path):
+        data = self.load_json()
+        if img_path in data:
+            return self.classes[data[img_path]]
+        else:
+            return "No Label"
 
     def on_next_button(self,e=None):
         self.current_video_num += 1
@@ -138,29 +143,32 @@ class MainWindow():
         self.set_video()
         # self.set_message()
 
-    # def labeling(self, class_num):
-    #     def x(e=None):
-    #         img_path =self.images_list[self.current_image_num]
-    #         self.update_json(img_path, class_num)
-    #         self.set_message()
-    #     return x
+    def labeling(self, class_num):
+        def x(e=None):
+            video_path =self.source_list[self.current_video_num]
+            self.update_json(video_path, class_num)
+            self.set_message()
+        return x
 
-    # def load_json(self):
-    #     data = {}
-    #     try:
-    #         data = json.load(open(self.json_path,'r'))
-    #     except json.JSONDecodeError as e:
-    #         pass
-    #     except FileNotFoundError as e:
-    #         with open(self.json_path, 'w'):
-    #             pass
-    #     return data
+    def load_json(self):
+        data = {}
+        try:
+            data = json.load(open(self.json_path,'r'))
+        except json.JSONDecodeError as e:
+            pass
+        except FileNotFoundError as e:
+            with open(self.json_path, 'w'):
+                pass
+        return data
 
-    # def update_json(self,img_path, class_num):
-    #     data = self.load_json()
-    #     data[img_path] = class_num
-    #     json.dump(data, open(self.json_path,'w'),indent=4)
+    def update_json(self,video_path, class_num):
+        data = self.load_json()
+        data[video_path] = class_num
+        json.dump(data, open(self.json_path,'w'),indent=4)
 
 root = tkinter.Tk()
 MainWindow(root)
 root.mainloop()
+
+# References
+# https://github.com/takanosuke/classifier_annotation_tool
