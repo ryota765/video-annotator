@@ -1,40 +1,42 @@
 import os
 import glob
 import json
+import click
 
 import tkinter
-# from tkinter import font
 
 import cv2
 from PIL import Image, ImageTk
 
 # Hyper parameters -------------------------------
-source_dir = 'video'
-output_dir = 'output'
-class_list = ['feed', 'no_feed', 'unknown']
-display_num = 1 # 4
-frame_display_interval = 10 # ms
-video_display_width = 700
-video_display_height = 500
-json_path = 'output/output.json'
+# source_dir = 'video'
+# output_dir = 'output'
+# class_list = ['feed', 'no_feed', 'unknown']
+# frame_display_interval = 10 # ms
+# video_display_width = 700
+# video_display_height = 500
+# json_path = 'output/output.json'
 # ------------------------------------------------
 
 class MainWindow():
 
-    def __init__(self, root):
+    def __init__(self, root, config_path):
+
+        config = json.load(open(config_path, "r"))
+
         self.current_video_num = 0
         self.root = root
-        self.source_dir = source_dir
-        self.output_dir = output_dir
-        self.class_list = class_list
-        self.class_num = len(class_list)
+        self.source_dir = config["source_dir"]
+        self.output_dir = config["output_dir"]
+        self.class_list = config["class_list"]
+        self.class_num = len(self.class_list)
         self.button_class = []
-        self.video_width = video_display_width
-        self.video_height = video_display_height
+        self.video_width = config["video_display_width"]
+        self.video_height = config["video_display_height"]
         self.source_list = glob.glob(os.path.join(self.source_dir, '*'))
         self.source_num = len(self.source_list)
-        self.json_path = json_path
-        self.interval = frame_display_interval # ms
+        self.json_path = config["json_path"]
+        self.interval = config["frame_display_interval"] # ms
         self.loop_job_id = None
         self.init_window()
         self.set_video()
@@ -56,12 +58,6 @@ class MainWindow():
             self.root, text="Back (←)", command=self.on_back_button, height=3)
         self.button_back.grid(row=2, column=0, pady=10, sticky='nsew')
 
-        # Buttons for class labeling
-        self.button_class = []
-        for i, c in enumerate(self.class_list):
-            self.button_class.append(tkinter.Button(self.root, text="{}".format(c), command=lambda:[self.labeling(class_num=i), self.on_next_button()], width=10, height=3))
-            self.button_class[i].grid(row=3, column=i%self.class_num+1, padx=5, pady=10, sticky='nsew')
-
 
     def set_video(self):
         if self.loop_job_id:
@@ -74,6 +70,12 @@ class MainWindow():
         self.set_label()
         self.label_image_class = tkinter.Label(self.root, textvariable=self.selected_video_class, width=self.class_num*10, background='#CCDDDD')
         self.label_image_class.grid(row=1, columnspan=7)
+
+        # Buttons for class labeling
+        self.button_class = []
+        for i, c in enumerate(self.class_list):
+            self.button_class.append(tkinter.Button(self.root, text="{}".format(c), command=lambda:[self.labeling(class_num=i), self.on_next_button()], width=10, height=3))
+            self.button_class[i].grid(row=3, column=i%self.class_num+1, padx=5, pady=10, sticky='nsew')
 
     def update_image(self):
         ret, image = self.cap.read()
@@ -113,10 +115,10 @@ class MainWindow():
         self.set_video()
 
     def labeling(self, class_num):
-        def x(e=None):
-            video_path =self.source_list[self.current_video_num]
-            self.update_json(video_path, class_num)
-        return x
+        print(f'labeling: {class_num}')
+        video_path =self.source_list[self.current_video_num]
+        self.update_json(video_path, class_num)
+        return
 
     def load_json(self):
         data = {}
@@ -129,14 +131,22 @@ class MainWindow():
                 pass
         return data
 
-    def update_json(self,video_path, class_num):
+    def update_json(self, video_path, class_num):
         data = self.load_json()
         data[video_path] = class_num
-        json.dump(data, open(self.json_path,'w'),indent=4)
+        print(f'update: {data}, path: {video_path}, class: {class_num}')
+        json.dump(data, open(self.json_path,'w'), indent=4)
 
-root = tkinter.Tk()
-MainWindow(root)
-root.mainloop()
+@click.command()
+@click.option("--config_path", type=str, default="config/config.json")
+def main(config_path):
+    root = tkinter.Tk()
+    MainWindow(root,config_path)
+    root.mainloop()
+
+
+if __name__ == "__main__":
+    main()
 
 # References
 # https://github.com/takanosuke/classifier_annotation_tool

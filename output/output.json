@@ -1,5 +1,6 @@
 {
-    "video/test3.mp4": 1,
     "video/test4.mp4": 2,
-    "video/test2.mp4": 0
+    "video/test3.mp4": 2,
+    "video/test2.mp4": 2,
+    "video/test1.mp4": 2
 }

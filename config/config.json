@@ -1,0 +1,9 @@
+{
+    "source_dir": "video",
+    "output_dir": "output",
+    "class_list": ["feed", "no_feed", "unknown"],
+    "frame_display_interval": 10,
+    "video_display_width": 700,
+    "video_display_height": 500,
+    "json_path": "output/output.json"
+}

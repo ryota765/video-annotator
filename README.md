@@ -10,4 +10,3 @@ python3 video_annotator.py
 - ディレクトリ選択
 - 動画の速さ調整
 - アノテーションの種類をconfig.jsonとかで定義したい
-- 動画終わったらリピート
