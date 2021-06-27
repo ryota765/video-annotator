@@ -25,8 +25,10 @@ class MainWindow:
         self.source_list = glob.glob(os.path.join(self.source_dir, "*"))
         self.source_num = len(self.source_list)
         self.json_path = config["json_path"]
-        self.interval = config["frame_display_interval"]  # [ms] Less interval -> higer temporal resolution
-        self.video_speed_list = ["×1","×2","×4"]
+        self.interval = config[
+            "frame_display_interval"
+        ]  # [ms] Less interval -> higer temporal resolution
+        self.video_speed_list = ["×1", "×2", "×4"]
         self.video_speed = 1
         self.loop_job_id = None
         self.init_window()
@@ -35,7 +37,7 @@ class MainWindow:
     # Set components without video
     def init_window(self):
 
-        self.root.title(u"Video Annotator")
+        self.root.title("Video Annotator")
 
         # display video
         self.canvas = tkinter.Canvas(
@@ -79,7 +81,7 @@ class MainWindow:
                     self.root,
                     text=f"▶︎ {c}",
                     command=lambda x=i: [
-                        self.update_video_speed(2**x),
+                        self.update_video_speed(2 ** x),
                     ],
                     width=10,
                     height=3,
