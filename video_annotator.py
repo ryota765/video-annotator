@@ -46,11 +46,11 @@ class MainWindow:
         self.button_next = tkinter.Button(
             self.root, text="Next (→)", command=self.on_next_button, height=3
         )
-        self.button_next.grid(row=2, column=self.class_num + 1, pady=10, sticky="nsew")
+        self.button_next.grid(row=3, column=self.class_num + 1, pady=10, sticky="nsew")
         self.button_back = tkinter.Button(
             self.root, text="Back (←)", command=self.on_back_button, height=3
         )
-        self.button_back.grid(row=2, column=0, pady=10, sticky="nsew")
+        self.button_back.grid(row=3, column=0, pady=10, sticky="nsew")
 
         # Buttons for class labeling
         self.button_class = []
@@ -68,7 +68,7 @@ class MainWindow:
                 )
             )
             self.button_class[i].grid(
-                row=3, column=i + 1, padx=5, pady=10, sticky="nsew"
+                row=2, column=i + 1, padx=5, pady=10, sticky="nsew"
             )
 
     def set_video(self):
