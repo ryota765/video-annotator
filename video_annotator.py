@@ -20,13 +20,14 @@ class MainWindow:
         self.output_dir = config["output_dir"]
         self.class_list = config["class_list"]
         self.class_num = len(self.class_list)
-        self.button_class = []
         self.video_width = config["video_display_width"]
         self.video_height = config["video_display_height"]
         self.source_list = glob.glob(os.path.join(self.source_dir, "*"))
         self.source_num = len(self.source_list)
         self.json_path = config["json_path"]
-        self.interval = config["frame_display_interval"]  # ms
+        self.interval = config["frame_display_interval"]  # [ms] Less interval -> higer temporal resolution
+        self.video_speed_list = ["×1","×2","×4"]
+        self.video_speed = 1
         self.loop_job_id = None
         self.init_window()
         self.set_video()
@@ -40,17 +41,17 @@ class MainWindow:
         self.canvas = tkinter.Canvas(
             self.root, width=self.video_width, height=self.video_height
         )
-        self.canvas.grid(row=0, column=0, columnspan=6, rowspan=1)
+        self.canvas.grid(row=1, column=0, columnspan=6, rowspan=1)
 
         # Buttons to change video
         self.button_next = tkinter.Button(
             self.root, text="Next (→)", command=self.on_next_button, height=3
         )
-        self.button_next.grid(row=3, column=self.class_num + 1, pady=10, sticky="nsew")
+        self.button_next.grid(row=4, column=self.class_num + 1, pady=10, sticky="nsew")
         self.button_back = tkinter.Button(
             self.root, text="Back (←)", command=self.on_back_button, height=3
         )
-        self.button_back.grid(row=3, column=0, pady=10, sticky="nsew")
+        self.button_back.grid(row=4, column=0, pady=10, sticky="nsew")
 
         # Buttons for class labeling
         self.button_class = []
@@ -58,7 +59,7 @@ class MainWindow:
             self.button_class.append(
                 tkinter.Button(
                     self.root,
-                    text="{}".format(c),
+                    text=f"{c}",
                     command=lambda x=i: [
                         self.labeling(class_num=x),
                         self.on_next_button(),
@@ -68,7 +69,24 @@ class MainWindow:
                 )
             )
             self.button_class[i].grid(
-                row=2, column=i + 1, padx=5, pady=10, sticky="nsew"
+                row=3, column=i + 1, padx=5, pady=10, sticky="nsew"
+            )
+
+        self.button_speed = []
+        for i, c in enumerate(self.video_speed_list):
+            self.button_speed.append(
+                tkinter.Button(
+                    self.root,
+                    text=f"▶︎ {c}",
+                    command=lambda x=i: [
+                        self.update_video_speed(2**x),
+                    ],
+                    width=10,
+                    height=3,
+                )
+            )
+            self.button_speed[i].grid(
+                row=0, column=i + 1, padx=5, pady=10, sticky="nsew"
             )
 
     def set_video(self):
@@ -86,10 +104,11 @@ class MainWindow:
             width=self.class_num * 10,
             background="#CCDDDD",
         )
-        self.label_image_class.grid(row=1, columnspan=7)
+        self.label_image_class.grid(row=2, columnspan=7)
 
     def update_image(self):
-        ret, image = self.cap.read()
+        for i in range(self.video_speed):
+            ret, image = self.cap.read()
         if ret:
             self.image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # to RGB
             self.image = Image.fromarray(self.image).resize(
@@ -132,6 +151,10 @@ class MainWindow:
     def labeling(self, class_num):
         video_path = self.source_list[self.current_video_num]
         self.update_json(video_path, class_num)
+        return
+
+    def update_video_speed(self, speed):
+        self.video_speed = speed
         return
 
     def load_json(self):
